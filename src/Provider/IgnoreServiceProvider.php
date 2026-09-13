@@ -18,6 +18,7 @@ class IgnoreServiceProvider extends AbstractServiceProvider
             $discussionMutators = array_values(array_filter(
                 $discussionMutators,
                 fn ($mutator) => $mutator !== HideHiddenTagsFromAllDiscussionsPage::class
+                    && ! $mutator instanceof HideHiddenTagsFromAllDiscussionsPage
             ));
 
             $discussionMutators[] = IgnoreHiddenTagsMutator::class;
