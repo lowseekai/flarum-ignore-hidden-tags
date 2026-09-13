@@ -1,26 +1,28 @@
 <?php
 
-
 namespace Nodeloc\IgnoreHiddenTags\Provider;
 
+use Flarum\Discussion\Search\DiscussionSearcher;
 use Flarum\Foundation\AbstractServiceProvider;
-use Nodeloc\IgnoreHiddenTags\Filter\IgnoreHiddenTagsFromAllDiscussionsPage;
-use Flarum\Discussion\Filter\DiscussionFilterer;
+use Flarum\Tags\Search\HideHiddenTagsFromAllDiscussionsPage;
+use Illuminate\Support\Arr;
+use Nodeloc\IgnoreHiddenTags\Filter\IgnoreHiddenTagsFromAllDiscussionsPage as IgnoreHiddenTagsMutator;
 
 class IgnoreServiceProvider extends AbstractServiceProvider
 {
-    public function register()
+    public function register(): void
     {
-        $this->container->extend('flarum.filter.filter_mutators', function (&$mutators) {
-            $filtererClass = DiscussionFilterer::class;
-            if (isset($mutators[$filtererClass])) {
-                $index = array_search("Flarum\Tags\Filter\HideHiddenTagsFromAllDiscussionsPage", $mutators[$filtererClass]);
-                if ($index !== false) {
-                    unset($mutators[$filtererClass][$index]);
-                }
-            }
-            // 添加你自己的过滤器变换器
-            $mutators[$filtererClass][] = $this->container->make(IgnoreHiddenTagsFromAllDiscussionsPage::class);
+        $this->container->extend('flarum.search.mutators', function (array $mutators): array {
+            $discussionMutators = Arr::get($mutators, DiscussionSearcher::class, []);
+
+            $discussionMutators = array_values(array_filter(
+                $discussionMutators,
+                fn ($mutator) => $mutator !== HideHiddenTagsFromAllDiscussionsPage::class
+            ));
+
+            $discussionMutators[] = IgnoreHiddenTagsMutator::class;
+            $mutators[DiscussionSearcher::class] = $discussionMutators;
+
             return $mutators;
         });
     }
